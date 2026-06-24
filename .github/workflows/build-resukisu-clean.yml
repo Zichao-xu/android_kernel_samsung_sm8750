@@ -1,0 +1,69 @@
+name: Build ReSukiSU Clean Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_branch:
+        description: "Kernel branch to build"
+        required: false
+        default: ""
+  push:
+    branches:
+      - codex/resukisu-clean-env
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Resolve build branch
+        id: branch
+        shell: bash
+        run: |
+          branch="${{ inputs.kernel_branch }}"
+          if [ -z "$branch" ]; then
+            branch="${GITHUB_REF_NAME}"
+          fi
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout CI center
+        uses: actions/checkout@v7
+        with:
+          repository: YuzakiKokuban/Kokuban_Kernel_CI_Center
+          path: ci-center
+
+      - name: Point S25 project at this fork
+        working-directory: ci-center
+        shell: bash
+        run: |
+          jq '.s25_sm8750.repo = "${{ github.repository }}"' \
+            configs/projects.json > configs/projects.json.tmp
+          mv configs/projects.json.tmp configs/projects.json
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git libncurses5-dev bc bison flex \
+            libssl-dev p7zip-full lz4 cpio curl wget libelf-dev dwarves jq lld \
+            pahole libdw-dev unzip zip
+
+      - name: Build ReSukiSU clean package
+        working-directory: ci-center
+        shell: bash
+        run: |
+          ./kokuban build s25_sm8750 "${{ steps.branch.outputs.name }}" resukisu \
+            --no-susfs \
+            --no-bbg \
+            --local-root "$RUNNER_TEMP/kokuban-cache"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: s25-resukisu-clean-${{ github.run_id }}
+          path: |
+            ci-center/artifacts/s25_sm8750/**
+            ci-center/builds/s25_sm8750/**/*.log
+          if-no-files-found: warn
