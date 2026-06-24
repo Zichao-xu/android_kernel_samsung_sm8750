@@ -56,6 +56,7 @@ jobs:
           ./kokuban build s25_sm8750 "${{ steps.branch.outputs.name }}" resukisu \
             --no-susfs \
             --no-bbg \
+            --custom-localversion android15 \
             --local-root "$RUNNER_TEMP/kokuban-cache"
 
       - name: Collect artifacts
