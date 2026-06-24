@@ -58,12 +58,22 @@ jobs:
             --no-bbg \
             --local-root "$RUNNER_TEMP/kokuban-cache"
 
+      - name: Collect artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p upload-artifacts
+          find "$RUNNER_TEMP/kokuban-cache" -type f \( \
+            -name '*.zip' -o \
+            -name '*.log' -o \
+            -name '.config' -o \
+            -name 'build-info.json' \
+          \) -print -exec cp -v {} upload-artifacts/ \;
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: s25-resukisu-clean-${{ github.run_id }}
-          path: |
-            ci-center/artifacts/s25_sm8750/**
-            ci-center/builds/s25_sm8750/**/*.log
+          path: upload-artifacts/**
           if-no-files-found: warn
