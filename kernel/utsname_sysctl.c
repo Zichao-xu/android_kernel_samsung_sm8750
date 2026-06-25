@@ -12,6 +12,7 @@
 #include <linux/sysctl.h>
 #include <linux/wait.h>
 #include <linux/rwsem.h>
+#include <linux/kokuban_envhide.h>
 
 #ifdef CONFIG_PROC_SYSCTL
 
@@ -49,6 +50,12 @@ static int proc_do_uts_string(struct ctl_table *table, int write,
 	down_read(&uts_sem);
 	memcpy(tmp_data, get_uts(table), sizeof(tmp_data));
 	up_read(&uts_sem);
+	if (!write) {
+		if (table->data == init_uts_ns.name.release)
+			strscpy(tmp_data, KOKUBAN_ENVHIDE_RELEASE, sizeof(tmp_data));
+		else if (table->data == init_uts_ns.name.version)
+			strscpy(tmp_data, KOKUBAN_ENVHIDE_VERSION, sizeof(tmp_data));
+	}
 	r = proc_dostring(&uts_table, write, buffer, lenp, ppos);
 
 	if (write) {

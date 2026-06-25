@@ -9,6 +9,7 @@
 #include <linux/mm.h>
 #include <linux/mm_inline.h>
 #include <linux/utsname.h>
+#include <linux/kokuban_envhide.h>
 #include <linux/mman.h>
 #include <linux/reboot.h>
 #include <linux/prctl.h>
@@ -1312,6 +1313,7 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
 	up_read(&uts_sem);
+	kokuban_envhide_uts(&tmp);
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
 
@@ -1336,6 +1338,8 @@ SYSCALL_DEFINE1(uname, struct old_utsname __user *, name)
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
 	up_read(&uts_sem);
+	strscpy(tmp.release, KOKUBAN_ENVHIDE_RELEASE, sizeof(tmp.release));
+	strscpy(tmp.version, KOKUBAN_ENVHIDE_VERSION, sizeof(tmp.version));
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
 
@@ -1362,6 +1366,8 @@ SYSCALL_DEFINE1(olduname, struct oldold_utsname __user *, name)
 	memcpy(&tmp.version, &utsname()->version, __OLD_UTS_LEN);
 	memcpy(&tmp.machine, &utsname()->machine, __OLD_UTS_LEN);
 	up_read(&uts_sem);
+	strscpy(tmp.release, KOKUBAN_ENVHIDE_RELEASE, sizeof(tmp.release));
+	strscpy(tmp.version, KOKUBAN_ENVHIDE_VERSION, sizeof(tmp.version));
 	if (copy_to_user(name, &tmp, sizeof(tmp)))
 		return -EFAULT;
 

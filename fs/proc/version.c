@@ -5,14 +5,15 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/utsname.h>
+#include <linux/kokuban_envhide.h>
 #include "internal.h"
 
 static int version_proc_show(struct seq_file *m, void *v)
 {
 	seq_printf(m, linux_proc_banner,
 		utsname()->sysname,
-		utsname()->release,
-		utsname()->version);
+		KOKUBAN_ENVHIDE_RELEASE,
+		KOKUBAN_ENVHIDE_VERSION);
 	return 0;
 }
 
